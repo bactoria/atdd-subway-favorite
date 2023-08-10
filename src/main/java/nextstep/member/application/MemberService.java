@@ -20,8 +20,23 @@ public class MemberService {
     }
 
     public MemberResponse findMember(Long id) {
-        Member member = memberRepository.findById(id).orElseThrow(RuntimeException::new);
+        Member member = memberRepository.findById(id).orElseThrow(() -> new NotExistsMemberException("존재하지 않는 아이디. id: " + id));
         return MemberResponse.of(member);
+    }
+
+    public Member login(String email, String password) {
+        Member member = memberRepository.findByEmail(email).orElseThrow(() -> new NotExistsMemberException("존재하지 않는 이메일. email: " + email));
+
+        if (!member.checkPassword(password)) {
+            throw new PasswordMismatchException("올바르지 않은 비밀번호");
+        }
+
+        return member;
+    }
+
+    public Member findByEmailOrCreateMember(String email) {
+        return memberRepository.findByEmail(email)
+                .orElseGet(() -> memberRepository.save(new Member(email, "", 0)));
     }
 
     public void updateMember(Long id, MemberRequest param) {
